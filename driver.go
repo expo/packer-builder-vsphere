@@ -1,16 +1,17 @@
 package main
 
 import (
+	"context"
+	"errors"
+	"fmt"
+	"net/url"
+	"time"
+
 	"github.com/vmware/govmomi"
 	"github.com/vmware/govmomi/find"
-	"context"
-	"net/url"
-	"fmt"
 	"github.com/vmware/govmomi/object"
-	"github.com/vmware/govmomi/vim25/types"
 	"github.com/vmware/govmomi/vim25/mo"
-	"errors"
-	"time"
+	"github.com/vmware/govmomi/vim25/types"
 )
 
 type Driver struct {
@@ -62,7 +63,13 @@ func (d *Driver) CloneVM(config *CloneConfig) (*object.VirtualMachine, error) {
 
 	var relocateSpec types.VirtualMachineRelocateSpec
 
-	pool, err := d.finder.ResourcePoolOrDefault(d.ctx, fmt.Sprintf("/%v/host/%v/Resources/%v", d.datacenter.Name(), config.Host, config.ResourcePool))
+	var pool *object.ResourcePool
+	if config.ResourcePool != "" {
+		pool, err = d.finder.ResourcePoolOrDefault(d.ctx, fmt.Sprintf("/%v/host/%v/Resources/%v", d.datacenter.Name(), config.Host, config.ResourcePool))
+	} else {
+		pool, err = d.finder.ResourcePoolOrDefault(d.ctx, "")
+	}
+
 	if err != nil {
 		return nil, err
 	}
